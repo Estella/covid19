@@ -110,7 +110,7 @@ set cacorona(language) "en"
 
 
 ###
-#Flags required to use !covid [location] command
+#Flags required to use !ccovid [location] command
 #
 set cacorona(flags) "nm|M"
 
@@ -130,12 +130,12 @@ set cacorona(ignore_prot) "1"
 set cacorona(flood_prot) "5:10"
 
 ###
-#COVID RSS (minutes)
+#CCOVID RSS (minutes)
 #Set here the time for the script to check if the info changed 
 #If the info changed it will be shown on chan
-#only when the option is enabled with +autocovid
+#only when the option is enabled with +autoccovid
 ###
-set cacorona(time_check) "60"
+set cacorona(time_check) "5"
 
 ########################################################################################################
 
@@ -209,13 +209,13 @@ proc cacorona:auto_check {data channels num} {
   set confirmed_cases [lindex $extract 0]
   set probable_cases [lindex $extract 1]
   set total_deaths [lindex $extract 2]
-  if {[info exists cacorona($chan:autocovid:entry)]} {
-    if {$cacorona($chan:autocovid:entry) != $extract} {
-      set cacorona($chan:autocovid:entry) $extract
+  if {[info exists cacorona($chan:autoccovid:entry)]} {
+    if {$cacorona($chan:autoccovid:entry) != $extract} {
+      set cacorona($chan:autoccovid:entry) $extract
       cacorona:say "" $chan [list $location $confirmed_cases $probable_cases $total_deaths] 4
     }
   } else {
-    set cacorona($chan:autocovid:entry) $extract
+    set cacorona($chan:autoccovid:entry) $extract
     cacorona:say "" $chan [list $location $confirmed_cases $probable_cases $total_deaths] 4
   }
   set next_num [expr $num + 1]
@@ -246,7 +246,7 @@ proc cacorona:getdata {} {
 ###
 proc cacorona:pub {nick host hand chan arg} {
   global cacorona
-  if {![channel get $chan covid]} { return }
+  if {![channel get $chan ccovid]} { return }
   set total 0
   set flood_protect [cacorona:flood:prot $chan $host]
   if {$flood_protect == "1"} {
@@ -292,7 +292,7 @@ proc cacorona:extract {data location total} {
 proc cacorona:flood:prot {chan host} {
   global cacorona
   set number [scan $cacorona(flood_prot) %\[^:\]]
-  set timer [scan $cacorona(flood_prot) %*\[^:\]:%s]
+  set xtimer [scan $cacorona(flood_prot) %*\[^:\]:%s]
   if {[info exists cacorona(flood:$host:$chan:act)]} {
     return 1
   }
@@ -305,7 +305,7 @@ proc cacorona:flood:prot {chan host} {
     set cacorona(flood:$host:$chan) 0 
   }
   incr cacorona(flood:$host:$chan)
-  utimer $timer [list cacorona:remove:flood $host $chan]  
+  utimer $xtimer [list cacorona:remove:flood $host $chan]  
   if {$cacorona(flood:$host:$chan) > $number} {
     set cacorona(flood:$host:$chan:act) 1
     utimer 60 [list cacorona:expire:flood $host $chan]
@@ -380,7 +380,7 @@ set cacorona(version) "1.2"
 
 set cacorona(en.lang.1) "Invalid location specified"
 set cacorona(en.lang.2) "You exceded the number of commands. Please wait %msg.1% seconds."
-set cacorona(en.lang.3) "\002COVID-19\002 stats for -- %msg.1% -- Number of confirmed cases: \00307\002%msg.2%\002\003 ; Number of probable cases: \00308\002%msg.3%\002\003 ; Number of deaths: \00304\002%msg.4%\002\003"
-set cacorona(en.lang.4) "\002COVID-19 (Update)\002 stats for -- %msg.1% -- Number of confirmed cases: \00307\002%msg.2%\002\003 ; Number of probable cases: \00308\002%msg.3%\002\003 ; Number of deaths: \00304\002%msg.4%\002\003"
+set cacorona(en.lang.3) "\002COVID-19 Canada\002 stats for -- %msg.1% -- Number of confirmed cases: \00307\002%msg.2%\002\003 ; Number of probable cases: \00308\002%msg.3%\002\003 ; Number of deaths: \00304\002%msg.4%\002\003"
+set cacorona(en.lang.4) "\002COVID-19 Canada (Update)\002 stats for -- %msg.1% -- Number of confirmed cases: \00307\002%msg.2%\002\003 ; Number of probable cases: \00308\002%msg.3%\002\003 ; Number of deaths: \00304\002%msg.4%\002\003"
 
 putlog "$cacorona(name) $cacorona(version) TCL by $cacorona(owner) loaded. For more tcls visit -- $cacorona(site) --"
