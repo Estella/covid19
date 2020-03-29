@@ -158,11 +158,11 @@ set cacorona(location_list) {
 "Repatriated travellers"
 }
 
-###############################################################################################################
+########################################################################################################
 #
 #     Try to edit only the language :-)
 #
-###############################################################################################################
+########################################################################################################
 
 package require tls
 package require http
@@ -175,11 +175,26 @@ setudef flag autoccovid
 setudef str ccovid-location
 setudef str ccovid-lang
 
+if {![info exists cacorona(timer_start)]} {
+  set cacorona(timerID) [timer $cacorona(time_check) cacorona:auto_timer]
+  set cacorona(timer_start) 1
+  utimer 60 cacorona:auto_repair
+  putlog "CCOVID (CID): $cacorona(timerID)"
+}
 
 ###
-if {![info exists cacorona(timer_start)]} {
-  timer $cacorona(time_check) cacorona:auto_timer
-  set cacorona(timer_start) 1
+proc cacorona:auto_repair {} {
+  global cacorona
+  set restart_timer 1
+  if {[info exists cacorona(timerID)]} {
+    foreach xtimer [timers] {
+      if {$cacorona(timerID) == [lindex $xtimer 2]} { set restart_timer 0 }
+    }
+    if {$restart_timer} {
+      set cacorona(timerID) [timer $cacorona(time_check) cacorona:auto_timer]
+      putlog "CCOVID (repair): $cacorona(timerID)"
+    }
+  }
 }
 
 ###
@@ -226,7 +241,7 @@ proc cacorona:auto_check {data channels num} {
   }
 }
 
-
+###
 proc random_int limit {
   expr {int(rand() * $limit +1)}
 }
@@ -257,7 +272,7 @@ proc cacorona:pub {nick host hand chan arg} {
   set location [join [lrange [split $arg] 0 end]]
   if {$location == ""} {
     set total 1
-    set location "Total"
+    set location "Canada"
   } else {
     set find_location [lsearch -nocase $cacorona(location_list) $location]
     if {$find_location < 0} {
@@ -268,7 +283,10 @@ proc cacorona:pub {nick host hand chan arg} {
     }
   }
   set data [cacorona:getdata]
+  if {$data == ""} { return }
+  if {$data == "0"} { return }
   set extract [cacorona:extract $data $location $total]
+  if {$extract == 0} { return }
   set confirmed_cases [lindex $extract 0]
   set probable_cases [lindex $extract 1]
   set total_deaths [lindex $extract 2]
@@ -280,12 +298,15 @@ proc cacorona:pub {nick host hand chan arg} {
 proc cacorona:extract {data location total} {
   global cacorona
   set var "${location}_START(.*)${location}_END"
-  regexp -nocase $var $data text
-  set split_text [split $text ","]
-  set confirmed_cases [lindex $split_text 1]
-  set probable_cases [lindex $split_text 2]
-  set total_deaths [lindex $split_text 3]
-  return [list $confirmed_cases $probable_cases $total_deaths]
+  if {[regexp -nocase $var $data text]} {
+    set split_text [split $text ","]
+    set confirmed_cases [lindex $split_text 1]
+    set probable_cases [lindex $split_text 2]
+    set total_deaths [lindex $split_text 3]
+    return [list $confirmed_cases $probable_cases $total_deaths]
+  } else {
+    return 0
+  }
 }
 
 ###
